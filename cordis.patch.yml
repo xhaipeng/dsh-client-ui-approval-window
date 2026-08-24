@@ -1,0 +1,7 @@
+# The approval-window host plugin patch layer: mounts the host service that
+# runs the per-session risk gate. The browser half is injected by the same
+# package via `dsh.client` (declared in package.json); it adds the session
+# header button once `conversation.session.header.actions` is declared.
+- insert:
+    - id: approval-window
+      name: '@xuhai/dsh-approval-window'
