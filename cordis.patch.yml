@@ -4,4 +4,4 @@
 # header button once `conversation.session.header.actions` is declared.
 - insert:
     - id: approval-window
-      name: '@xuhai/dsh-approval-window'
+      name: '@xuhai/dsh-client-ui-approval-window'
