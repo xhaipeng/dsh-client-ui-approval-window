@@ -38,18 +38,26 @@ function pathOf(input: Readonly<RiskRuleInput>): string {
   return typeof raw === 'string' ? raw : ''
 }
 
-/** File/directory destruction — `rm` with recursive (-r) and usually force (-f). */
+/** File/directory destruction — recursive delete (`rm -rf`, `Remove-Item -Recurse`, `rd /s`). */
 function fileDirDestruction(input: Readonly<RiskRuleInput>): boolean {
   const command = commandOf(input)
   if (command === '') return false
+  // rm -rf / rm -fr / rm --recursive / rm -r (bash-style recursive deletion).
   const hasRm = /(?:\s|^|['"\);|&])\s*rm(\s|$|[.\w])/i.test(command)
-  if (!hasRm) return false
-  // rm -rf / rm -fr / rm --recursive / rm -r (recursive deletion).
-  return /(?:^|[\s;|&])rm\s+-[a-zA-Z]*r[a-zA-Z]*f[a-zA-Z]*/i.test(command)
+  if (hasRm && (
+    /(?:^|[\s;|&])rm\s+-[a-zA-Z]*r[a-zA-Z]*f[a-zA-Z]*/i.test(command)
     || /(?:^|[\s;|&])rm\s+-[a-zA-Z]*f[a-zA-Z]*r[a-zA-Z]*/i.test(command)
     || /(?:^|[\s;|&])rm\s+--recursive/i.test(command)
     || /(?:^|[\s;|&])rm\s+-r\b/i.test(command)
     || /(?:^|[\s;|&])rm\s+-[a-zA-Z]*r[a-zA-Z]*$/i.test(command)
+  )) return true
+  // PowerShell-native recursive / forced directory-tree deletion: Remove-Item
+  // (aliases del/erase) with -Recurse, or rd/rmdir/del/erase with the cmd '/s'
+  // replay switch. Without these the gate auto-allows a whole-tree delete inside
+  // an armed approval window (the same danger as rm -rf).
+  if (/\b(?:Remove-Item|del|erase)\b[^\r\n;]*-Recurse\b/i.test(command)) return true
+  if (/\b(?:rd|rmdir|del|erase)\b[^\r\n;]*\/\s*s\b/i.test(command)) return true
+  return false
 }
 
 /** Dangerously rewriting git history / force-pushing. */
